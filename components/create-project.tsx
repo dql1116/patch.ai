@@ -10,7 +10,7 @@ import type {
   ExperienceLevel,
   Industry,
 } from "@/lib/types";
-import { addProject } from "@/lib/store";
+import { addProject, saveTeam } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -44,9 +44,9 @@ const ROLES: { value: Role; label: string; icon: React.ReactNode }[] = [
 ];
 
 const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string }[] = [
-  { value: "junior", label: "Junior" },
-  { value: "mid", label: "Mid" },
-  { value: "senior", label: "Senior" },
+  { value: "junior", label: "Beginner" },
+  { value: "mid", label: "Intermediate" },
+  { value: "senior", label: "Advanced" },
 ];
 
 interface RoleNeeded {
@@ -124,6 +124,16 @@ export function CreateProject({ user, onCreated, onCancel }: CreateProjectProps)
     };
 
     addProject(project);
+    const now = Date.now();
+    saveTeam({
+      id: `team-${now}`,
+      projectId: project.id,
+      project,
+      members: [user],
+      matchScore: 100,
+      matchReason: "Project created by you.",
+      createdAt: new Date().toISOString(),
+    });
     onCreated();
   }
 

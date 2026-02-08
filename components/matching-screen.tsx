@@ -2,16 +2,23 @@
 
 import { useState, useEffect } from "react";
 import type { UserProfile, Team } from "@/lib/types";
-import { getProjects, getMockUsers, saveTeam } from "@/lib/store";
+import {
+  clearMatchPreference,
+  getMatchPreferences,
+  getProjects,
+  getMockUsers,
+  getTeams,
+  saveTeam,
+} from "@/lib/store";
 import { Sparkles, X } from "lucide-react";
 
 const MATCHING_MESSAGES = [
   "Analyzing your profile...",
   "Scanning available projects...",
-  "Evaluating team compatibility...",
+  "Evaluating project compatibility...",
   "Finding complementary skill sets...",
   "Calculating match scores...",
-  "Assembling your dream team...",
+  "Assembling your dream project...",
 ];
 
 interface MatchingScreenProps {
@@ -37,26 +44,46 @@ export function MatchingScreen({
 
   useEffect(() => {
     async function performMatch() {
-      const projects = getProjects();
+      const existingTeams = getTeams();
+      const userTeamProjectIds = new Set(
+        existingTeams
+          .filter((team) => team.members.some((m) => m.id === user.id))
+          .map((team) => team.projectId),
+      );
+      const projects = getProjects().filter(
+        (project) => !userTeamProjectIds.has(project.id),
+      );
+      const preferredProjectIds = getMatchPreferences();
+      const preferredProjects = preferredProjectIds
+        .map((id) => projects.find((project) => project.id === id))
+        .filter(Boolean) as typeof projects;
+      const preferredProject = preferredProjects[0] || null;
       const mockUsers = getMockUsers();
 
       try {
+        if (projects.length === 0) {
+          clearMatchPreference();
+          onCancel();
+          return;
+        }
         const res = await fetch("/api/match", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user,
             projects,
+            preferredProjectIds,
             availableUsers: mockUsers,
           }),
         });
 
         const data = await res.json();
-
-        const project = projects.find((p) => p.id === data.projectId);
+        const project =
+          preferredProject ||
+          projects.find((p) => p.id === data.projectId);
         if (!project) {
           // Fallback: use first project
-          const fallbackProject = projects[0];
+          const fallbackProject = preferredProject || projects[0];
           const fallbackMembers = mockUsers.slice(0, 3);
           const team: Team = {
             id: `team-${Date.now()}`,
@@ -65,10 +92,11 @@ export function MatchingScreen({
             members: [user, ...fallbackMembers],
             matchScore: 78,
             matchReason:
-              "Your skills complement this team well. This project aligns with your interests.",
+              "Your skills complement this project well. This project aligns with your interests.",
             createdAt: new Date().toISOString(),
           };
           saveTeam(team);
+          clearMatchPreference();
           onComplete(team);
           return;
         }
@@ -94,11 +122,19 @@ export function MatchingScreen({
         };
 
         saveTeam(team);
+        clearMatchPreference();
         onComplete(team);
       } catch (err) {
         // Fallback matching
-        const projects = getProjects();
-        const fallbackProject = projects[0];
+        const projects = getProjects().filter(
+          (project) => !userTeamProjectIds.has(project.id),
+        );
+        if (projects.length === 0) {
+          clearMatchPreference();
+          onCancel();
+          return;
+        }
+        const fallbackProject = preferredProject || projects[0];
         const fallbackMembers = getMockUsers().slice(0, 3);
         const team: Team = {
           id: `team-${Date.now()}`,
@@ -107,10 +143,11 @@ export function MatchingScreen({
           members: [user, ...fallbackMembers],
           matchScore: 82,
           matchReason:
-            "Based on your profile, this team is a great fit for your skills and work style.",
+            "Based on your profile, this project is a great fit for your skills and work style.",
           createdAt: new Date().toISOString(),
         };
         saveTeam(team);
+        clearMatchPreference();
         onComplete(team);
       }
     }
@@ -124,7 +161,10 @@ export function MatchingScreen({
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
       <button
         type="button"
-        onClick={onCancel}
+        onClick={() => {
+          clearMatchPreference();
+          onCancel();
+        }}
         className="absolute right-4 top-4 rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
         aria-label="Cancel matching"
       >
@@ -148,7 +188,7 @@ export function MatchingScreen({
         </div>
 
         <h2 className="font-display text-2xl font-bold text-foreground">
-          Finding Your Perfect Team
+          Finding Your Perfect Project
         </h2>
 
         <p className="mt-3 text-muted-foreground transition-all duration-500">

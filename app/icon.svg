@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="patch.ai app icon">
+  <rect width="512" height="512" rx="120" fill="#2563EB"/>
+  <rect x="96" y="96" width="208" height="208" rx="48" fill="#F8FAFC" opacity="0.92"/>
+  <rect x="208" y="208" width="208" height="208" rx="48" fill="#F8FAFC" opacity="0.92"/>
+  <rect x="200" y="200" width="112" height="56" rx="20" fill="#F8FAFC" opacity="0.6"/>
+  <rect x="228" y="172" width="56" height="112" rx="20" fill="#F8FAFC" opacity="0.6"/>
+  <line x1="140" y1="172" x2="172" y2="172" stroke="#1D4ED8" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+  <line x1="140" y1="204" x2="172" y2="204" stroke="#1D4ED8" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+  <line x1="140" y1="236" x2="172" y2="236" stroke="#1D4ED8" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+  <line x1="340" y1="308" x2="372" y2="308" stroke="#1D4ED8" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+  <line x1="340" y1="340" x2="372" y2="340" stroke="#1D4ED8" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+  <line x1="340" y1="372" x2="372" y2="372" stroke="#1D4ED8" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+</svg>

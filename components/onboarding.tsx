@@ -5,7 +5,8 @@ import React from "react"
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Role, ExperienceLevel, Industry, WorkEthic } from "@/lib/types";
-import { createUserProfile } from "@/lib/store";
+import { createUserProfile, getAuthEmail } from "@/lib/store";
+import { PatchLogo } from "@/components/patch-logo";
 import {
   Code2,
   Briefcase,
@@ -13,7 +14,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Sparkles,
-  Users,
 } from "lucide-react";
 
 const ROLES: { value: Role; label: string; icon: React.ReactNode; desc: string }[] = [
@@ -37,10 +37,10 @@ const ROLES: { value: Role; label: string; icon: React.ReactNode; desc: string }
   },
 ];
 
-const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string; desc: string }[] = [
-  { value: "junior", label: "Junior", desc: "0-2 years of experience" },
-  { value: "mid", label: "Mid-Level", desc: "3-5 years of experience" },
-  { value: "senior", label: "Senior", desc: "6+ years of experience" },
+const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string }[] = [
+  { value: "junior", label: "Beginner" },
+  { value: "mid", label: "Intermediate" },
+  { value: "senior", label: "Advanced" },
 ];
 
 const INDUSTRIES: { value: Industry; label: string }[] = [
@@ -75,9 +75,10 @@ const WORK_ETHICS: { value: WorkEthic; label: string; desc: string }[] = [
 
 interface OnboardingProps {
   onComplete: () => void;
+  onExit?: () => void;
 }
 
-export function Onboarding({ onComplete }: OnboardingProps) {
+export function Onboarding({ onComplete, onExit }: OnboardingProps) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role | null>(null);
@@ -112,8 +113,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
   function handleSubmit() {
     if (!role || !experience || !workEthic) return;
+    const email = getAuthEmail() || "demo@patch.ai.ai";
     createUserProfile({
       name: name.trim(),
+      email,
       role,
       experience,
       industries,
@@ -127,14 +130,12 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-            <Users className="h-7 w-7 text-primary-foreground" />
-          </div>
+          <PatchLogo size="md" className="mx-auto mb-4" />
           <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
-            Patch
+            patch.ai
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Let{"'"}s set up your profile to find the perfect team
+            Let{"'"}s set up your profile to find the perfect project
           </p>
         </div>
 
@@ -237,9 +238,6 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                     )}
                   >
                     <div className="font-medium">{e.label}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {e.desc}
-                    </div>
                   </button>
                 ))}
               </div>
@@ -310,17 +308,22 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         <div className="mt-6 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => setStep((s) => s - 1)}
-            disabled={step === 0}
+            onClick={() => {
+              if (step === 0) {
+                onExit?.();
+                return;
+              }
+              setStep((s) => s - 1);
+            }}
             className={cn(
               "flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
               step === 0
-                ? "text-muted-foreground opacity-50"
+                ? "text-foreground hover:bg-secondary"
                 : "text-foreground hover:bg-secondary",
             )}
           >
             <ChevronLeft className="h-4 w-4" />
-            Back
+            {step === 0 ? "Back to login" : "Back"}
           </button>
 
           {step < totalSteps - 1 ? (

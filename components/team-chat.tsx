@@ -63,7 +63,7 @@ export function TeamChat({ team, currentUser, onBack }: TeamChatProps) {
     {
       id: "bot-welcome",
       role: "assistant",
-      text: `Hey team! Welcome to the ${team.project.title} project chat. I'm your Patch assistant -- here to help you collaborate. You've got a great group here: ${team.members.map((m) => m.name).join(", ")}. Let's build something amazing together! Feel free to ask me anything about coordinating your project.`,
+      text: `Hey team! Welcome to the ${team.project.title} project chat. I'm your patch.ai assistant -- here to help you collaborate. You've got a great group here: ${team.members.map((m) => m.name).join(", ")}. Let's build something amazing together! Feel free to ask me anything about coordinating your project.`,
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);
@@ -178,7 +178,7 @@ export function TeamChat({ team, currentUser, onBack }: TeamChatProps) {
                   >
                     {!isUser && (
                       <div className="mb-1 text-xs font-semibold text-primary">
-                        Patch Bot
+                        patch.ai Bot
                       </div>
                     )}
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
