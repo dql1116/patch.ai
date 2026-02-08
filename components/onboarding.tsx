@@ -5,7 +5,7 @@ import React from "react"
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Role, ExperienceLevel, Industry, WorkEthic } from "@/lib/types";
-import { createUserProfile } from "@/lib/store";
+import { createUserProfile, getAuthEmail } from "@/lib/store";
 import {
   Code2,
   Briefcase,
@@ -113,8 +113,10 @@ export function Onboarding({ onComplete, onExit }: OnboardingProps) {
 
   function handleSubmit() {
     if (!role || !experience || !workEthic) return;
+    const email = getAuthEmail() || "demo@patch.ai.ai";
     createUserProfile({
       name: name.trim(),
+      email,
       role,
       experience,
       industries,
@@ -132,7 +134,7 @@ export function Onboarding({ onComplete, onExit }: OnboardingProps) {
             <Users className="h-7 w-7 text-primary-foreground" />
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
-            Patch
+            patch.ai
           </h1>
           <p className="mt-2 text-muted-foreground">
             Let{"'"}s set up your profile to find the perfect team

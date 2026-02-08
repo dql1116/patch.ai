@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { UserProfile, Project, Team } from "@/lib/types";
 import { getProjects, getTeams } from "@/lib/store";
 import { ProjectCard } from "@/components/project-card";
@@ -36,6 +37,7 @@ interface Recommendation {
 }
 
 export function Dashboard({ user, onLogout }: DashboardProps) {
+  const router = useRouter();
   const [view, setView] = useState<View>("dashboard");
   const [projects, setProjects] = useState<Project[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -172,14 +174,19 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
             <div>
               <h1 className="font-display text-lg font-bold text-foreground">
-                Patch
+                patch.ai
               </h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary hover:opacity-80"
+              aria-label="Open profile"
+            >
               {user.avatar}
-            </div>
+            </button>
             <button
               type="button"
               onClick={() => {

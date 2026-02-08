@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated, setAuthenticated } from "@/lib/store";
+import { isAuthenticated, setAuthEmail, setAuthenticated } from "@/lib/store";
 import { Users } from "lucide-react";
 
 export default function LoginPage() {
@@ -22,6 +22,7 @@ export default function LoginPage() {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!canContinue) return;
+    setAuthEmail(email.trim());
     setAuthenticated(true);
     router.replace("/onboarding");
   }
@@ -34,7 +35,7 @@ export default function LoginPage() {
             <Users className="h-7 w-7 text-primary-foreground" />
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
-            Patch
+            patch.ai
           </h1>
           <p className="mt-2 text-muted-foreground">
             Sign in to continue to onboarding

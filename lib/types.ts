@@ -14,12 +14,14 @@ export type WorkEthic = "async" | "collaborative" | "structured" | "flexible";
 export interface UserProfile {
   id: string;
   name: string;
+  email: string;
   role: Role;
   experience: ExperienceLevel;
   industries: Industry[];
   workEthic: WorkEthic;
   avatar: string;
   onboarded: boolean;
+  completedProjectIds: string[];
 }
 
 export interface Project {
