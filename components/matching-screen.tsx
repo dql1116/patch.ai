@@ -15,10 +15,10 @@ import { Sparkles, X } from "lucide-react";
 const MATCHING_MESSAGES = [
   "Analyzing your profile...",
   "Scanning available projects...",
-  "Evaluating team compatibility...",
+  "Evaluating project compatibility...",
   "Finding complementary skill sets...",
   "Calculating match scores...",
-  "Assembling your dream team...",
+  "Assembling your dream project...",
 ];
 
 interface MatchingScreenProps {
@@ -92,7 +92,7 @@ export function MatchingScreen({
             members: [user, ...fallbackMembers],
             matchScore: 78,
             matchReason:
-              "Your skills complement this team well. This project aligns with your interests.",
+              "Your skills complement this project well. This project aligns with your interests.",
             createdAt: new Date().toISOString(),
           };
           saveTeam(team);
@@ -143,7 +143,7 @@ export function MatchingScreen({
           members: [user, ...fallbackMembers],
           matchScore: 82,
           matchReason:
-            "Based on your profile, this team is a great fit for your skills and work style.",
+            "Based on your profile, this project is a great fit for your skills and work style.",
           createdAt: new Date().toISOString(),
         };
         saveTeam(team);
@@ -188,7 +188,7 @@ export function MatchingScreen({
         </div>
 
         <h2 className="font-display text-2xl font-bold text-foreground">
-          Finding Your Perfect Team
+          Finding Your Perfect Project
         </h2>
 
         <p className="mt-3 text-muted-foreground transition-all duration-500">

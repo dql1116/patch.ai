@@ -44,9 +44,9 @@ const ROLES: { value: Role; label: string; icon: React.ReactNode }[] = [
 ];
 
 const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string }[] = [
-  { value: "junior", label: "Junior" },
-  { value: "mid", label: "Mid" },
-  { value: "senior", label: "Senior" },
+  { value: "junior", label: "Beginner" },
+  { value: "mid", label: "Intermediate" },
+  { value: "senior", label: "Advanced" },
 ];
 
 interface RoleNeeded {

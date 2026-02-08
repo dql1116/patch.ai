@@ -29,9 +29,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const EXPERIENCE_LABELS: Record<string, string> = {
-  junior: "Junior",
-  mid: "Mid-Level",
-  senior: "Senior",
+  junior: "Beginner",
+  mid: "Intermediate",
+  senior: "Advanced",
 };
 
 const AVATAR_COLORS = [
@@ -117,7 +117,7 @@ export function TeamView({ team, currentUser, onChat, onBack }: TeamViewProps) {
         <div className="mb-6">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <Users className="h-4 w-4" />
-            Team Members ({team.members.length})
+            Project Members ({team.members.length})
           </h3>
           <div className="flex flex-col gap-3">
             {team.members.map((member, idx) => (

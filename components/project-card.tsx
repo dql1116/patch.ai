@@ -19,9 +19,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const EXPERIENCE_LABELS: Record<string, string> = {
-  junior: "Jr",
-  mid: "Mid",
-  senior: "Sr",
+  junior: "Beginner",
+  mid: "Intermediate",
+  senior: "Advanced",
 };
 
 const INDUSTRY_COLORS: Record<string, string> = {
@@ -122,7 +122,7 @@ export function ProjectCard({
       <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Users className="h-3.5 w-3.5" />
-          <span>Team of {project.teamSize}</span>
+          <span>Project team of {project.teamSize}</span>
         </div>
         <div className="flex items-center gap-1.5">
           {project.rolesNeeded.map((r, i) => (

@@ -21,9 +21,9 @@ const ROLE_LABELS: Record<Role, string> = {
 };
 
 const EXPERIENCE_LABELS: Record<ExperienceLevel, string> = {
-  junior: "Junior",
-  mid: "Mid-Level",
-  senior: "Senior",
+  junior: "Beginner",
+  mid: "Intermediate",
+  senior: "Advanced",
 };
 
 const WORK_ETHIC_LABELS: Record<WorkEthic, string> = {
@@ -250,7 +250,7 @@ export default function ProfilePage() {
             ))}
             {ongoingTeams.length === 0 && (
               <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-                No ongoing projects yet. Join a team to get started.
+                No ongoing projects yet. Join a project to get started.
               </div>
             )}
           </div>

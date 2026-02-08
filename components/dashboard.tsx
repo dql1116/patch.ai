@@ -145,7 +145,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
         {visibleTeams.length > 0 && (
           <div className="mb-6">
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Your Teams
+              Your Projects
             </h3>
             <div className="flex flex-col gap-2">
               {visibleTeams.map((team) => (
@@ -153,7 +153,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
                   key={team.id}
                   type="button"
                   onClick={() => {
-                    router.push(`/dashboard/team/${team.id}`);
+                    router.push(`/dashboard/project/${team.id}`);
                   }}
                   className="flex items-center justify-between rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-sm"
                 >
@@ -241,7 +241,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90"
           >
             <Sparkles className="h-4 w-4" />
-            Match Into Team
+            Match Into Project
           </button>
           <button
             type="button"

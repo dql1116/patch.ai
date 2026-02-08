@@ -37,10 +37,10 @@ const ROLES: { value: Role; label: string; icon: React.ReactNode; desc: string }
   },
 ];
 
-const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string; desc: string }[] = [
-  { value: "junior", label: "Junior", desc: "0-2 years of experience" },
-  { value: "mid", label: "Mid-Level", desc: "3-5 years of experience" },
-  { value: "senior", label: "Senior", desc: "6+ years of experience" },
+const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string }[] = [
+  { value: "junior", label: "Beginner" },
+  { value: "mid", label: "Intermediate" },
+  { value: "senior", label: "Advanced" },
 ];
 
 const INDUSTRIES: { value: Industry; label: string }[] = [
@@ -137,7 +137,7 @@ export function Onboarding({ onComplete, onExit }: OnboardingProps) {
             patch.ai
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Let{"'"}s set up your profile to find the perfect team
+            Let{"'"}s set up your profile to find the perfect project
           </p>
         </div>
 
@@ -240,9 +240,6 @@ export function Onboarding({ onComplete, onExit }: OnboardingProps) {
                     )}
                   >
                     <div className="font-medium">{e.label}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {e.desc}
-                    </div>
                   </button>
                 ))}
               </div>

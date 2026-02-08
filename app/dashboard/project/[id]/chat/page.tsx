@@ -51,7 +51,7 @@ export default function TeamChatPage() {
     <TeamChat
       team={team}
       currentUser={user}
-      onBack={() => router.push(`/dashboard/team/${team.id}`)}
+      onBack={() => router.push(`/dashboard/project/${team.id}`)}
     />
   );
 }

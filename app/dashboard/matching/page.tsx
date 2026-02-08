@@ -38,7 +38,7 @@ export default function MatchingPage() {
     <MatchingScreen
       user={user}
       onComplete={(team: Team) => {
-        router.replace(`/dashboard/team/${team.id}`);
+        router.replace(`/dashboard/project/${team.id}`);
       }}
       onCancel={() => router.replace("/dashboard")}
     />
