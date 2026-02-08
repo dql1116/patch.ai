@@ -1,6 +1,19 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { Project, UserProfile } from "@/lib/types";
-import { getOpenAIClient, OPENAI_MODEL } from "@/lib/openai";
+import { geminiClient, GEMINI_MODEL } from "@/lib/gemini";
+
+export const runtime = "nodejs";
+
+const CACHE_TTL_MS = 10 * 60 * 1000;
+const matchCache =
+  (globalThis as { __matchCache?: Map<string, { expires: number; data: { matchReason: string; teamDynamic: string } }> })
+    .__matchCache || new Map<string, { expires: number; data: { matchReason: string; teamDynamic: string } }>();
+(globalThis as { __matchCache?: Map<string, { expires: number; data: { matchReason: string; teamDynamic: string } }> })
+  .__matchCache = matchCache;
+
+function getMatchKey(userId: string, projectId: string) {
+  return `${userId}:${projectId}`;
+}
 
 const MOCK_TEAMMATES: UserProfile[] = [
   {
@@ -208,8 +221,12 @@ export async function POST(req: Request) {
     "This team brings together diverse skill sets and complementary working styles for productive collaboration.";
 
   let matchReason = fallbackReason;
+  const cacheKey = getMatchKey(user.id, chosenProject.id);
+  const cached = matchCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) {
+    matchReason = cached.data.matchReason;
+  } else {
   try {
-    const client = getOpenAIClient();
     const teamSummary = chosenMembers.map((m) => ({
       id: m.id,
       name: m.name,
@@ -232,21 +249,30 @@ ${JSON.stringify(chosenProject)}
 TeamMembers:
 ${JSON.stringify(teamSummary)}
 `;
-    const response = await client.responses.create({
-      model: OPENAI_MODEL,
-      input,
+    const response = await geminiClient.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: input,
     });
-    const text = response.output_text || "";
+    const text = response.text || "";
     const parsed = JSON.parse(text);
     if (parsed?.matchReason) {
       matchReason = String(parsed.matchReason);
+      matchCache.set(cacheKey, {
+        expires: Date.now() + CACHE_TTL_MS,
+        data: {
+          matchReason,
+          teamDynamic: String(parsed.teamDynamic || teamDynamic),
+        },
+      });
       console.log("[match] AI matchReason generated");
     } else {
       console.log("[match] AI response missing matchReason, using fallback");
     }
-  } catch {
+  } catch (err) {
     console.log("[match] fallback matchReason due to AI error");
+    console.error("[match] AI error:", err);
     matchReason = fallbackReason;
+  }
   }
 
   return Response.json({

@@ -1,4 +1,4 @@
-import { getOpenAIClient, OPENAI_MODEL } from "@/lib/openai";
+import { geminiClient, GEMINI_MODEL } from "@/lib/gemini";
 
 type Recommendation = {
   projectId: string;
@@ -83,13 +83,30 @@ function safeParseRecommendations(text: string, fallback: Recommendation[]) {
   }
 }
 
+export const runtime = "nodejs";
+
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const recommendCache =
+  (globalThis as { __recommendCache?: Map<string, { expires: number; data: Recommendation[] }> })
+    .__recommendCache || new Map<string, { expires: number; data: Recommendation[] }>();
+(globalThis as { __recommendCache?: Map<string, { expires: number; data: Recommendation[] }> })
+  .__recommendCache = recommendCache;
+
+function getCacheKey(userId: string, projectIds: string[]) {
+  return `${userId}:${projectIds.sort().join(",")}`;
+}
+
 export async function POST(req: Request) {
   const { user, projects } = await req.json();
 
   const fallback = heuristicRecommendations(projects, user);
+  const key = getCacheKey(String(user?.id || "anon"), projects.map((p: any) => p.id));
+  const cached = recommendCache.get(key);
+  if (cached && cached.expires > Date.now()) {
+    return Response.json({ recommendations: cached.data, cached: true });
+  }
 
   try {
-    const client = getOpenAIClient();
     const input = `
 You are an expert product matchmaker. Given a user profile and a list of projects, rank the projects by fit.
 Return ONLY valid JSON with this shape:
@@ -106,20 +123,23 @@ Projects:
 ${JSON.stringify(projects)}
 `;
 
-    const response = await client.responses.create({
-      model: OPENAI_MODEL,
-      input,
+    const response = await geminiClient.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: input,
     });
-
-    const text = response.output_text || "";
+    const text = response.text || "";
     const recommendations = safeParseRecommendations(text, fallback);
     const usedAI = recommendations !== fallback;
     console.log(
       `[recommend] ${usedAI ? "AI" : "fallback"} recommendations generated`,
     );
+    if (usedAI) {
+      recommendCache.set(key, { expires: Date.now() + CACHE_TTL_MS, data: recommendations });
+    }
     return Response.json({ recommendations });
-  } catch {
+  } catch (err) {
     console.log("[recommend] fallback recommendations due to AI error");
+    console.error("[recommend] AI error:", err);
     return Response.json({ recommendations: fallback });
   }
 }
