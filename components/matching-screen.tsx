@@ -26,7 +26,7 @@ export function MatchingScreen({
   onCancel,
 }: MatchingScreenProps) {
   const [messageIndex, setMessageIndex] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -96,7 +96,6 @@ export function MatchingScreen({
         saveTeam(team);
         onComplete(team);
       } catch (err) {
-        setError("An error occurred while matching. Please try again.");
         // Fallback matching
         const projects = getProjects();
         const fallbackProject = projects[0];

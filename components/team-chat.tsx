@@ -1,13 +1,17 @@
 "use client";
 
-import React from "react"
+import React from "react";
 
-import { useState, useRef, useEffect } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { Team, UserProfile } from "@/lib/types";
 import { ArrowLeft, Send, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface ChatMsg {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+}
 
 interface TeamChatProps {
   team: Team;
@@ -15,59 +19,93 @@ interface TeamChatProps {
   onBack: () => void;
 }
 
+function getBotReply(text: string): string {
+  const lower = text.toLowerCase();
+
+  if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
+    return "Hey there! Great to see you in the chat. How are you feeling about the project so far? Let me know if there's anything I can help coordinate.";
+  }
+  if (lower.includes("task") || lower.includes("todo") || lower.includes("what should")) {
+    return "Great question! I'd suggest starting with a quick kickoff meeting to align on goals and divide responsibilities. Each team member could pick a feature area that matches their strengths.";
+  }
+  if (lower.includes("meeting") || lower.includes("schedule") || lower.includes("call")) {
+    return "Scheduling a sync is a great idea! I'd recommend a short 30-minute kickoff to align on the project vision, then weekly 15-minute standups.";
+  }
+  if (lower.includes("help") || lower.includes("stuck") || lower.includes("issue")) {
+    return "Don't worry, we've got a solid team here! Try describing the specific challenge you're facing and I'm sure one of your teammates can jump in.";
+  }
+  if (lower.includes("deadline") || lower.includes("timeline") || lower.includes("when")) {
+    return "Setting clear milestones will help keep everyone on track. I'd suggest breaking the project into 2-week sprints with demo checkpoints.";
+  }
+  if (lower.includes("role") || lower.includes("who") || lower.includes("responsibility")) {
+    return "Engineers can tackle the technical architecture, designers can lead on UX/UI flows, and PMs can own the roadmap and stakeholder communication. Clear ownership prevents overlap!";
+  }
+  if (lower.includes("tech") || lower.includes("stack") || lower.includes("tool")) {
+    return "For the tech stack, I'd recommend choosing tools the majority of the team is comfortable with. Consistency beats novelty!";
+  }
+  if (lower.includes("thank") || lower.includes("thanks") || lower.includes("awesome")) {
+    return "You're welcome! This team has a lot of potential. Keep the communication flowing and don't hesitate to reach out if you need anything.";
+  }
+
+  const responses = [
+    "That's a great point! I think the team should discuss this together. What does everyone else think?",
+    "Interesting thought! This could be a good topic for your next team sync.",
+    "Thanks for sharing that! Collaboration is key -- make sure everyone's voice is heard.",
+    "Good input! I'd recommend documenting that so everyone stays aligned.",
+    "Nice thinking! The best teams iterate quickly and communicate often.",
+  ];
+  return responses[Math.floor(Math.random() * responses.length)];
+}
+
 export function TeamChat({ team, currentUser, onBack }: TeamChatProps) {
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<ChatMsg[]>([
+    {
+      id: "bot-welcome",
+      role: "assistant",
+      text: `Hey team! Welcome to the ${team.project.title} project chat. I'm your TeamForge assistant -- here to help you collaborate. You've got a great group here: ${team.members.map((m) => m.name).join(", ")}. Let's build something amazing together! Feel free to ask me anything about coordinating your project.`,
+    },
+  ]);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const teamContext = `Project: "${team.project.title}" - ${team.project.description}. Team members: ${team.members.map((m) => `${m.name} (${m.role})`).join(", ")}. The team was matched with a ${team.matchScore}% compatibility score.`;
-
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      prepareSendMessagesRequest: ({ id, messages }) => ({
-        body: {
-          messages,
-          id,
-          teamContext,
-        },
-      }),
-    }),
-    initialMessages: [
-      {
-        id: "bot-welcome",
-        role: "assistant",
-        parts: [
-          {
-            type: "text",
-            text: `Hey team! Welcome to the ${team.project.title} project chat. I'm your TeamForge assistant -- here to help you collaborate. You've got a great group here: ${team.members.map((m) => m.name).join(", ")}. Let's build something amazing together! Feel free to ask me anything about coordinating your project.`,
-          },
-        ],
-      },
-    ],
-  });
-
-  const isLoading = status === "streaming" || status === "submitted";
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isTyping]);
+
+  const simulateBotReply = useCallback((userText: string) => {
+    setIsTyping(true);
+    const reply = getBotReply(userText);
+
+    // Simulate typing delay
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `bot-${Date.now()}`,
+          role: "assistant",
+          text: reply,
+        },
+      ]);
+      setIsTyping(false);
+    }, 800 + Math.random() * 800);
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
-    sendMessage({ text: input });
-    setInput("");
-  }
+    if (!input.trim() || isTyping) return;
 
-  function getMessageText(message: (typeof messages)[0]): string {
-    if (!message.parts || !Array.isArray(message.parts)) return "";
-    return message.parts
-      .filter(
-        (p): p is { type: "text"; text: string } => p.type === "text",
-      )
-      .map((p) => p.text)
-      .join("");
+    const userMsg: ChatMsg = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      text: input.trim(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    const text = input.trim();
+    setInput("");
+    simulateBotReply(text);
   }
 
   return (
@@ -110,7 +148,6 @@ export function TeamChat({ team, currentUser, onBack }: TeamChatProps) {
         <div className="mx-auto max-w-3xl px-4 py-4">
           <div className="flex flex-col gap-4">
             {messages.map((message) => {
-              const text = getMessageText(message);
               const isUser = message.role === "user";
 
               return (
@@ -145,14 +182,14 @@ export function TeamChat({ team, currentUser, onBack }: TeamChatProps) {
                       </div>
                     )}
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {text}
+                      {message.text}
                     </p>
                   </div>
                 </div>
               );
             })}
 
-            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+            {isTyping && (
               <div className="flex gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
                   <Bot className="h-4 w-4 text-primary-foreground" />
@@ -197,14 +234,14 @@ export function TeamChat({ team, currentUser, onBack }: TeamChatProps) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type a message..."
             className="flex-1 rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            disabled={isLoading}
+            disabled={isTyping}
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isTyping}
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-xl transition-all",
-              input.trim() && !isLoading
+              input.trim() && !isTyping
                 ? "bg-primary text-primary-foreground hover:opacity-90"
                 : "bg-muted text-muted-foreground",
             )}

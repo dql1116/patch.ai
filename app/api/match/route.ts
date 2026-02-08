@@ -1,52 +1,117 @@
-import { generateText, Output } from "ai";
-import { z } from "zod";
-
-export const maxDuration = 30;
-
 export async function POST(req: Request) {
   const { user, projects, availableUsers } = await req.json();
 
-  const { output } = await generateText({
-    model: "openai/gpt-4o-mini",
-    output: Output.object({
-      schema: z.object({
-        projectId: z.string(),
-        teamMembers: z.array(z.string()),
-        matchScore: z.number(),
-        matchReason: z.string(),
-        teamDynamic: z.string(),
-      }),
-    }),
-    prompt: `You are an AI team matching system. Given a user who wants to join a team, available projects, and available team members, create the best team match.
+  // Score each project for the user
+  const scoredProjects = projects.map(
+    (project: {
+      id: string;
+      title: string;
+      industry: string;
+      rolesNeeded: { role: string; experience: string }[];
+      teamSize: number;
+      tags: string[];
+    }) => {
+      let score = 50;
 
-User wanting to join:
-- ID: ${user.id}
-- Name: ${user.name}
-- Role: ${user.role}
-- Experience: ${user.experience}
-- Industries: ${user.industries.join(", ")}
-- Work Style: ${user.workEthic}
+      const needsRole = project.rolesNeeded.some(
+        (r: { role: string }) => r.role === user.role,
+      );
+      if (needsRole) score += 25;
 
-Available Projects:
-${projects.map((p: { id: string; title: string; industry: string; rolesNeeded: { role: string; experience: string }[]; teamSize: number }) => `- ID: ${p.id}, Title: "${p.title}", Industry: ${p.industry}, Roles needed: ${p.rolesNeeded.map((r: { role: string; experience: string }) => `${r.role}(${r.experience})`).join(", ")}, Team size: ${p.teamSize}`).join("\n")}
+      const exactExpMatch = project.rolesNeeded.some(
+        (r: { role: string; experience: string }) =>
+          r.role === user.role && r.experience === user.experience,
+      );
+      if (exactExpMatch) score += 10;
 
-Available Team Members:
-${availableUsers.map((u: { id: string; name: string; role: string; experience: string; industries: string[]; workEthic: string }) => `- ID: ${u.id}, Name: ${u.name}, Role: ${u.role}, Experience: ${u.experience}, Industries: ${u.industries.join(", ")}, Work Style: ${u.workEthic}`).join("\n")}
+      const industryMatch = (user.industries || []).includes(project.industry);
+      if (industryMatch) score += 15;
 
-Select the best project for this user and assemble the best team. Consider:
-1. The user's role should fill a needed role on the project
-2. Team diversity (different roles complement each other)
-3. Industry alignment between user interests and project
-4. Work style compatibility
-5. Experience level balance
+      return { project, score: Math.min(98, score) };
+    },
+  );
 
-Return:
-- projectId: the selected project ID
-- teamMembers: array of user IDs (from available members) to form the team WITH the requesting user (include 2-3 other members, do NOT include the requesting user's ID)
-- matchScore: 1-100 how good this match is
-- matchReason: a 2-sentence explanation of why this is a great match
-- teamDynamic: a 1-sentence description of how this team will work together`,
+  // Pick the best project
+  scoredProjects.sort(
+    (a: { score: number }, b: { score: number }) => b.score - a.score,
+  );
+  const bestMatch = scoredProjects[0];
+  const chosenProject = bestMatch.project;
+
+  // Select team members: prioritize diversity of roles and matching industry
+  const otherUsers = availableUsers.filter(
+    (u: { id: string }) => u.id !== user.id,
+  );
+
+  const scored = otherUsers.map(
+    (u: {
+      id: string;
+      role: string;
+      experience: string;
+      industries: string[];
+      workEthic: string;
+    }) => {
+      let memberScore = 0;
+
+      // Different role from requesting user is better (diversity)
+      if (u.role !== user.role) memberScore += 10;
+
+      // Role needed by the project
+      const neededRole = chosenProject.rolesNeeded.some(
+        (r: { role: string }) => r.role === u.role,
+      );
+      if (neededRole) memberScore += 15;
+
+      // Industry overlap with project
+      if ((u.industries || []).includes(chosenProject.industry))
+        memberScore += 10;
+
+      // Work ethic compatibility
+      if (u.workEthic === user.workEthic) memberScore += 5;
+
+      return { user: u, score: memberScore };
+    },
+  );
+
+  scored.sort(
+    (a: { score: number }, b: { score: number }) => b.score - a.score,
+  );
+
+  const teamSize = Math.min(chosenProject.teamSize - 1, 3);
+  const chosenMembers = scored
+    .slice(0, Math.max(2, teamSize))
+    .map((s: { user: { id: string } }) => s.user.id);
+
+  // Build reason
+  const reasons: string[] = [];
+  if (
+    chosenProject.rolesNeeded.some(
+      (r: { role: string }) => r.role === user.role,
+    )
+  ) {
+    reasons.push(
+      `your ${user.role} skills are exactly what this project needs`,
+    );
+  }
+  if ((user.industries || []).includes(chosenProject.industry)) {
+    reasons.push(
+      `the ${chosenProject.industry} focus matches your interests`,
+    );
+  }
+  if (reasons.length === 0) {
+    reasons.push("this project offers great growth opportunities for you");
+  }
+
+  const matchReason = `${reasons[0].charAt(0).toUpperCase() + reasons[0].slice(1)}. ${reasons.length > 1 ? reasons[1].charAt(0).toUpperCase() + reasons[1].slice(1) + "." : "The team composition will provide excellent collaboration dynamics."}`;
+
+  const teamDynamic =
+    "This team brings together diverse skill sets and complementary working styles for productive collaboration.";
+
+  return Response.json({
+    projectId: chosenProject.id,
+    teamMembers: chosenMembers,
+    matchScore: bestMatch.score,
+    matchReason,
+    teamDynamic,
   });
-
-  return Response.json(output);
 }
