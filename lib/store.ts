@@ -229,6 +229,7 @@ let chatMessages: ChatMessage[] = [];
 const AUTH_KEY = "Patch-auth";
 const AUTH_EMAIL_KEY = "Patch-auth-email";
 const USER_KEY = "Patch-user";
+const MATCH_PREF_KEY = "Patch-match-preferences";
 
 type StoredUser = Omit<UserProfile, "email" | "completedProjectIds"> &
   Partial<Pick<UserProfile, "email" | "completedProjectIds">>;
@@ -267,6 +268,28 @@ export function clearAuth(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(AUTH_KEY);
   localStorage.removeItem(AUTH_EMAIL_KEY);
+}
+
+export function setMatchPreferences(projectIds: string[]): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(MATCH_PREF_KEY, JSON.stringify(projectIds));
+}
+
+export function getMatchPreferences(): string[] {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem(MATCH_PREF_KEY);
+  if (!stored) return [];
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearMatchPreference(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(MATCH_PREF_KEY);
 }
 
 export function getCurrentUser(): UserProfile | null {

@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { UserProfile, Project, Team } from "@/lib/types";
-import { getCompletedProjectIdsForUser, getProjects, getTeams } from "@/lib/store";
+import {
+  getCompletedProjectIdsForUser,
+  getProjects,
+  getTeams,
+  setMatchPreferences,
+} from "@/lib/store";
 import { ProjectCard } from "@/components/project-card";
 import { Sparkles, Plus, Users, LogOut, MessageCircle } from "lucide-react";
 
@@ -24,6 +29,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(true);
   const [existingTeams, setExistingTeams] = useState<Team[]>([]);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
 
   const refreshData = useCallback(() => {
     setProjects(getProjects());
@@ -176,6 +182,9 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
           <Sparkles className="h-4 w-4 text-primary" />
           Recommended For You
         </h3>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Click one or more project cards to set your matching preferences.
+        </p>
 
         {loadingRecs ? (
           <div className="flex flex-col gap-4">
@@ -198,6 +207,14 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
                   project={project}
                   reason={rec?.reason}
                   matchScore={rec?.matchScore}
+                  selected={selectedProjectIds.includes(project.id)}
+                  onSelect={(selected) => {
+                    setSelectedProjectIds((prev) =>
+                      prev.includes(selected.id)
+                        ? prev.filter((id) => id !== selected.id)
+                        : [...prev, selected.id],
+                    );
+                  }}
                 />
               );
             })}
@@ -217,7 +234,10 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
         <div className="mx-auto flex max-w-3xl items-center justify-center gap-3 px-4 py-3">
           <button
             type="button"
-            onClick={() => router.push("/dashboard/matching")}
+            onClick={() => {
+              setMatchPreferences(selectedProjectIds);
+              router.push("/dashboard/matching");
+            }}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90"
           >
             <Sparkles className="h-4 w-4" />

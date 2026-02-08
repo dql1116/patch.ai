@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import type { UserProfile, Team } from "@/lib/types";
-import { getProjects, getMockUsers, getTeams, saveTeam } from "@/lib/store";
+import {
+  clearMatchPreference,
+  getMatchPreferences,
+  getProjects,
+  getMockUsers,
+  getTeams,
+  saveTeam,
+} from "@/lib/store";
 import { Sparkles, X } from "lucide-react";
 
 const MATCHING_MESSAGES = [
@@ -46,10 +53,16 @@ export function MatchingScreen({
       const projects = getProjects().filter(
         (project) => !userTeamProjectIds.has(project.id),
       );
+      const preferredProjectIds = getMatchPreferences();
+      const preferredProjects = preferredProjectIds
+        .map((id) => projects.find((project) => project.id === id))
+        .filter(Boolean) as typeof projects;
+      const preferredProject = preferredProjects[0] || null;
       const mockUsers = getMockUsers();
 
       try {
         if (projects.length === 0) {
+          clearMatchPreference();
           onCancel();
           return;
         }
@@ -59,16 +72,18 @@ export function MatchingScreen({
           body: JSON.stringify({
             user,
             projects,
+            preferredProjectIds,
             availableUsers: mockUsers,
           }),
         });
 
         const data = await res.json();
-
-        const project = projects.find((p) => p.id === data.projectId);
+        const project =
+          preferredProject ||
+          projects.find((p) => p.id === data.projectId);
         if (!project) {
           // Fallback: use first project
-          const fallbackProject = projects[0];
+          const fallbackProject = preferredProject || projects[0];
           const fallbackMembers = mockUsers.slice(0, 3);
           const team: Team = {
             id: `team-${Date.now()}`,
@@ -81,6 +96,7 @@ export function MatchingScreen({
             createdAt: new Date().toISOString(),
           };
           saveTeam(team);
+          clearMatchPreference();
           onComplete(team);
           return;
         }
@@ -106,6 +122,7 @@ export function MatchingScreen({
         };
 
         saveTeam(team);
+        clearMatchPreference();
         onComplete(team);
       } catch (err) {
         // Fallback matching
@@ -113,10 +130,11 @@ export function MatchingScreen({
           (project) => !userTeamProjectIds.has(project.id),
         );
         if (projects.length === 0) {
+          clearMatchPreference();
           onCancel();
           return;
         }
-        const fallbackProject = projects[0];
+        const fallbackProject = preferredProject || projects[0];
         const fallbackMembers = getMockUsers().slice(0, 3);
         const team: Team = {
           id: `team-${Date.now()}`,
@@ -129,6 +147,7 @@ export function MatchingScreen({
           createdAt: new Date().toISOString(),
         };
         saveTeam(team);
+        clearMatchPreference();
         onComplete(team);
       }
     }
@@ -142,7 +161,10 @@ export function MatchingScreen({
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
       <button
         type="button"
-        onClick={onCancel}
+        onClick={() => {
+          clearMatchPreference();
+          onCancel();
+        }}
         className="absolute right-4 top-4 rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
         aria-label="Cancel matching"
       >

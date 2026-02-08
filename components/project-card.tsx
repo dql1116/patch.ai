@@ -50,11 +50,27 @@ interface ProjectCardProps {
   project: Project;
   reason?: string;
   matchScore?: number;
+  onSelect?: (project: Project) => void;
+  selected?: boolean;
 }
 
-export function ProjectCard({ project, reason, matchScore }: ProjectCardProps) {
+export function ProjectCard({
+  project,
+  reason,
+  matchScore,
+  onSelect,
+  selected,
+}: ProjectCardProps) {
   return (
-    <div className="group rounded-2xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-md">
+    <button
+      type="button"
+      onClick={() => onSelect?.(project)}
+      aria-pressed={!!selected}
+      className={cn(
+        "group w-full rounded-2xl border-2 bg-card p-5 text-left transition-all hover:shadow-md",
+        selected ? "border-primary shadow-md" : "border-border hover:border-primary/40",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -124,7 +140,7 @@ export function ProjectCard({ project, reason, matchScore }: ProjectCardProps) {
       <div className="mt-3 text-xs text-muted-foreground">
         Posted by {project.createdByName}
       </div>
-    </div>
+    </button>
   );
 }
 
