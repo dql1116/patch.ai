@@ -131,7 +131,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             <Users className="h-7 w-7 text-primary-foreground" />
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
-            TeamForge
+            Patch
           </h1>
           <p className="mt-2 text-muted-foreground">
             Let{"'"}s set up your profile to find the perfect team

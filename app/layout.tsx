@@ -11,7 +11,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "TeamForge - AI Team Matching",
+  title: "Patch - AI Team Matching",
   description: "Find your perfect project team with AI-powered matching",
 };
 

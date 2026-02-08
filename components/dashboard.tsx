@@ -172,7 +172,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
             <div>
               <h1 className="font-display text-lg font-bold text-foreground">
-                TeamForge
+                Patch
               </h1>
             </div>
           </div>
