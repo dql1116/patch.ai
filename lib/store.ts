@@ -12,7 +12,13 @@ import type {
 function getAvatarLetter(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return "P";
-  return trimmed[0].toUpperCase();
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    const first = parts[0][0]?.toUpperCase() || "";
+    const last = parts[parts.length - 1][0]?.toUpperCase() || "";
+    return `${first}${last}` || "P";
+  }
+  return parts[0][0]?.toUpperCase() || "P";
 }
 
 const MOCK_USERS: UserProfile[] = [
