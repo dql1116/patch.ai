@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { clearAuth, clearUser, getCurrentUser, isAuthenticated } from "@/lib/store";
 import { Onboarding } from "@/components/onboarding";
-import { Dashboard } from "@/components/dashboard";
+import { getCurrentProfile, signOut } from "@/lib/supabase/profile";
+import { createBrowserClient } from "@/lib/supabase/client";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -12,19 +12,24 @@ export default function OnboardingPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const isAuthed = isAuthenticated();
-    setAuthed(isAuthed);
-    if (!isAuthed) {
-      router.replace("/");
+    async function checkAuth() {
+      const supabase = createBrowserClient();
+      const { data } = await supabase.auth.getSession();
+      const isAuthed = !!data.session;
+      setAuthed(isAuthed);
+      if (!isAuthed) {
+        router.replace("/");
+        setLoading(false);
+        return;
+      }
+      const profile = await getCurrentProfile();
+      if (profile) {
+        router.replace("/dashboard");
+        return;
+      }
       setLoading(false);
-      return;
     }
-    const stored = getCurrentUser();
-    if (stored) {
-      router.replace("/dashboard");
-      return;
-    }
-    setLoading(false);
+    checkAuth();
   }, [router]);
 
   if (loading || authed === null || authed === false) {
@@ -40,9 +45,8 @@ export default function OnboardingPage() {
       onComplete={() => {
         router.replace("/dashboard");
       }}
-      onExit={() => {
-        clearUser();
-        clearAuth();
+      onExit={async () => {
+        await signOut();
         router.replace("/");
       }}
     />

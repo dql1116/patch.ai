@@ -10,7 +10,6 @@ import type {
   ExperienceLevel,
   Industry,
 } from "@/lib/types";
-import { addProject, saveTeam } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -44,9 +43,9 @@ const ROLES: { value: Role; label: string; icon: React.ReactNode }[] = [
 ];
 
 const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string }[] = [
-  { value: "junior", label: "Beginner" },
-  { value: "mid", label: "Intermediate" },
-  { value: "senior", label: "Advanced" },
+  { value: "beginner", label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced", label: "Advanced" },
 ];
 
 interface RoleNeeded {
@@ -72,7 +71,7 @@ export function CreateProject({ user, onCreated, onCancel }: CreateProjectProps)
   // Role adding state
   const [addingRole, setAddingRole] = useState(false);
   const [newRole, setNewRole] = useState<Role>("swe");
-  const [newExp, setNewExp] = useState<ExperienceLevel>("mid");
+  const [newExp, setNewExp] = useState<ExperienceLevel>("intermediate");
 
   function addRole() {
     setRolesNeeded((prev) => [
@@ -107,32 +106,37 @@ export function CreateProject({ user, onCreated, onCancel }: CreateProjectProps)
     );
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!canSubmit() || !industry) return;
 
-    const project: Project = {
-      id: `proj-${Date.now()}`,
-      title: title.trim(),
-      description: description.trim(),
-      industry,
-      createdBy: user.id,
-      createdByName: user.name,
-      rolesNeeded,
-      teamSize,
-      tags,
-      createdAt: new Date().toISOString(),
-    };
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: title.trim(),
+        description: description.trim(),
+        industry,
+        createdBy: user.id,
+        createdByName: user.name,
+        rolesNeeded,
+        teamSize,
+        tags,
+      }),
+    });
+    const data = await res.json();
+    const project = data.project as Project | undefined;
+    if (!project) return;
 
-    addProject(project);
-    const now = Date.now();
-    saveTeam({
-      id: `team-${now}`,
-      projectId: project.id,
-      project,
-      members: [user],
-      matchScore: 100,
-      matchReason: "Project created by you.",
-      createdAt: new Date().toISOString(),
+    await fetch("/api/teams", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId: project.id,
+        project,
+        members: [user],
+        matchScore: 100,
+        matchReason: "Project created by you.",
+      }),
     });
     onCreated();
   }

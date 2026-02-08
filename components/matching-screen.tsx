@@ -1,14 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { UserProfile, Team } from "@/lib/types";
+import type { Project, UserProfile, Team } from "@/lib/types";
 import {
   clearMatchPreference,
   getMatchPreferences,
-  getProjects,
-  getMockUsers,
-  getTeams,
-  saveTeam,
 } from "@/lib/store";
 import { Sparkles, X } from "lucide-react";
 
@@ -44,21 +40,24 @@ export function MatchingScreen({
 
   useEffect(() => {
     async function performMatch() {
-      const existingTeams = getTeams();
+      const teamRes = await fetch("/api/teams");
+      const teamData = await teamRes.json();
+      const existingTeams = (teamData.teams as Team[] | undefined) ?? [];
       const userTeamProjectIds = new Set(
         existingTeams
           .filter((team) => team.members.some((m) => m.id === user.id))
           .map((team) => team.projectId),
       );
-      const projects = getProjects().filter(
+      const projectRes = await fetch("/api/projects");
+      const projectData = await projectRes.json();
+      const projects = (projectData.projects as Project[] | undefined)?.filter(
         (project) => !userTeamProjectIds.has(project.id),
-      );
+      ) ?? [];
       const preferredProjectIds = getMatchPreferences();
       const preferredProjects = preferredProjectIds
         .map((id) => projects.find((project) => project.id === id))
         .filter(Boolean) as typeof projects;
       const preferredProject = preferredProjects[0] || null;
-      const mockUsers = getMockUsers();
 
       try {
         if (projects.length === 0) {
@@ -70,85 +69,85 @@ export function MatchingScreen({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            user,
-            projects,
             preferredProjectIds,
-            availableUsers: mockUsers,
+            userId: user.id,
           }),
         });
 
         const data = await res.json();
-        const project =
-          preferredProject ||
-          projects.find((p) => p.id === data.projectId);
+        const project = data.project || preferredProject || projects[0];
         if (!project) {
           // Fallback: use first project
           const fallbackProject = preferredProject || projects[0];
-          const fallbackMembers = mockUsers.slice(0, 3);
-          const team: Team = {
-            id: `team-${Date.now()}`,
-            projectId: fallbackProject.id,
-            project: fallbackProject,
-            members: [user, ...fallbackMembers],
-            matchScore: 78,
-            matchReason:
-              "Your skills complement this project well. This project aligns with your interests.",
-            createdAt: new Date().toISOString(),
-          };
-          saveTeam(team);
+          const fallbackMembers: UserProfile[] = [];
+          const fallbackTeam = await fetch("/api/teams", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              projectId: fallbackProject.id,
+              project: fallbackProject,
+              members: [user, ...fallbackMembers],
+              matchScore: 78,
+              matchReason:
+                "Your skills complement this project well. This project aligns with your interests.",
+            }),
+          }).then((r) => r.json());
           clearMatchPreference();
-          onComplete(team);
+          if (fallbackTeam?.team) {
+            onComplete(fallbackTeam.team as Team);
+          }
           return;
         }
 
-        const teamMembers = (data.teamMembers || [])
-          .map((id: string) => mockUsers.find((u) => u.id === id))
-          .filter(Boolean);
+        const teamMembers = (data.teamMembers || []) as UserProfile[];
 
-        // If no valid members found, pick random ones
-        const finalMembers =
-          teamMembers.length > 0 ? teamMembers : mockUsers.slice(0, 3);
-
-        const team: Team = {
-          id: `team-${Date.now()}`,
-          projectId: project.id,
-          project,
-          members: [user, ...finalMembers],
-          matchScore: data.matchScore || 85,
-          matchReason:
-            data.matchReason ||
-            "Great match based on your skills and interests!",
-          createdAt: new Date().toISOString(),
-        };
-
-        saveTeam(team);
+        const created = await fetch("/api/teams", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId: project.id,
+            project,
+            members: [user, ...teamMembers],
+            matchScore: data.matchScore || 85,
+            matchReason:
+              data.matchReason ||
+              "Great match based on your skills and interests!",
+          }),
+        }).then((r) => r.json());
         clearMatchPreference();
-        onComplete(team);
+        if (created?.team) {
+          onComplete(created.team as Team);
+        }
       } catch (err) {
         // Fallback matching
-        const projects = getProjects().filter(
+        const projectRes = await fetch("/api/projects");
+        const projectData = await projectRes.json();
+        const projects = (projectData.projects as Project[] | undefined)?.filter(
           (project) => !userTeamProjectIds.has(project.id),
-        );
+        ) ?? [];
         if (projects.length === 0) {
           clearMatchPreference();
           onCancel();
           return;
         }
         const fallbackProject = preferredProject || projects[0];
-        const fallbackMembers = getMockUsers().slice(0, 3);
-        const team: Team = {
-          id: `team-${Date.now()}`,
-          projectId: fallbackProject.id,
-          project: fallbackProject,
-          members: [user, ...fallbackMembers],
-          matchScore: 82,
-          matchReason:
-            "Based on your profile, this project is a great fit for your skills and work style.",
-          createdAt: new Date().toISOString(),
-        };
-        saveTeam(team);
+        const fallbackMembers: UserProfile[] = [];
+        const created = await fetch("/api/teams", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId: fallbackProject.id,
+            project: fallbackProject,
+            members: [user, ...fallbackMembers],
+            matchScore: 82,
+            matchReason:
+              "Based on your profile, this project is a great fit for your skills and work style.",
+          }),
+        }).then((r) => r.json());
         clearMatchPreference();
-        onComplete(team);
+        if (created?.team) {
+          onComplete(created.team as Team);
+        }
       }
     }
 

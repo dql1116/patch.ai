@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { Team, UserProfile } from "@/lib/types";
-import { getCurrentUser, getTeamById, isAuthenticated } from "@/lib/store";
 import { TeamView } from "@/components/team-view";
+import { createBrowserClient } from "@/lib/supabase/client";
+import { getCurrentProfile } from "@/lib/supabase/profile";
 
 export default function TeamPage() {
   const router = useRouter();
@@ -15,28 +16,34 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const authed = isAuthenticated();
-    if (!authed) {
-      router.replace("/");
-      return;
+    async function load() {
+      const supabase = createBrowserClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        router.replace("/");
+        return;
+      }
+      const stored = await getCurrentProfile();
+      if (!stored) {
+        router.replace("/onboarding");
+        return;
+      }
+      if (!teamId) {
+        router.replace("/dashboard");
+        return;
+      }
+      const res = await fetch(`/api/teams/${teamId}`);
+      const teamData = await res.json();
+      const found = teamData?.team as Team | undefined;
+      if (!found) {
+        router.replace("/dashboard");
+        return;
+      }
+      setUser(stored);
+      setTeam(found);
+      setLoading(false);
     }
-    const stored = getCurrentUser();
-    if (!stored) {
-      router.replace("/onboarding");
-      return;
-    }
-    if (!teamId) {
-      router.replace("/dashboard");
-      return;
-    }
-    const found = getTeamById(teamId);
-    if (!found) {
-      router.replace("/dashboard");
-      return;
-    }
-    setUser(stored);
-    setTeam(found);
-    setLoading(false);
+    load();
   }, [router, teamId]);
 
   if (loading || !team || !user) {

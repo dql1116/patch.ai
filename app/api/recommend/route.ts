@@ -1,80 +1,125 @@
+import { getOpenAIClient, OPENAI_MODEL } from "@/lib/openai";
+
+type Recommendation = {
+  projectId: string;
+  reason: string;
+  matchScore: number;
+};
+
+function heuristicRecommendations(projects: any[], user: any): Recommendation[] {
+  const recommendations = projects.map((project) => {
+    let score = 50;
+    let reasons: string[] = [];
+
+    const needsRole = project.rolesNeeded.some(
+      (r: { role: string; experience: string }) => r.role === user.role,
+    );
+    if (needsRole) {
+      score += 20;
+      reasons.push(`needs a ${user.role}`);
+    }
+
+    const exactExpMatch = project.rolesNeeded.some(
+      (r: { role: string; experience: string }) =>
+        r.role === user.role && r.experience === user.experience,
+    );
+    if (exactExpMatch) {
+      score += 10;
+      reasons.push("your experience level is a perfect fit");
+    }
+
+    const industryMatch = (user.industries || []).includes(project.industry);
+    if (industryMatch) {
+      score += 15;
+      reasons.push(`aligns with your interest in ${project.industry}`);
+    }
+
+    const techTags = ["React", "TypeScript", "Next.js", "Node.js", "Python"];
+    const designTags = ["UX Research", "Figma", "Design Systems"];
+    const pmTags = ["Agile", "Strategy", "Product"];
+    const relevantTags =
+      user.role === "swe"
+        ? techTags
+        : user.role === "designer"
+          ? designTags
+          : pmTags;
+    const tagOverlap = project.tags.filter((t: string) =>
+      relevantTags.some((rt) => t.toLowerCase().includes(rt.toLowerCase())),
+    ).length;
+    score += tagOverlap * 3;
+
+    score = Math.min(98, Math.max(40, score));
+
+    const reason =
+      reasons.length > 0
+        ? `This project ${reasons.slice(0, 2).join(" and ")}.`
+        : `This project could be a great way to expand your skills.`;
+
+    return {
+      projectId: project.id,
+      reason,
+      matchScore: score,
+    };
+  });
+
+  recommendations.sort((a, b) => b.matchScore - a.matchScore);
+  return recommendations;
+}
+
+function safeParseRecommendations(text: string, fallback: Recommendation[]) {
+  try {
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed?.recommendations)) return fallback;
+    const normalized = parsed.recommendations
+      .map((rec: any) => ({
+        projectId: String(rec.projectId || ""),
+        reason: String(rec.reason || ""),
+        matchScore: Number(rec.matchScore || 0),
+      }))
+      .filter((rec: Recommendation) => rec.projectId);
+    return normalized.length ? normalized : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function POST(req: Request) {
   const { user, projects } = await req.json();
 
-  const recommendations = projects.map(
-    (project: {
-      id: string;
-      title: string;
-      description: string;
-      industry: string;
-      rolesNeeded: { role: string; experience: string }[];
-      tags: string[];
-    }) => {
-      let score = 50;
-      let reasons: string[] = [];
+  const fallback = heuristicRecommendations(projects, user);
 
-      // Role match: does the project need this user's role?
-      const needsRole = project.rolesNeeded.some(
-        (r: { role: string; experience: string }) => r.role === user.role,
-      );
-      if (needsRole) {
-        score += 20;
-        reasons.push(`needs a ${user.role}`);
-      }
+  try {
+    const client = getOpenAIClient();
+    const input = `
+You are an expert product matchmaker. Given a user profile and a list of projects, rank the projects by fit.
+Return ONLY valid JSON with this shape:
+{"recommendations":[{"projectId":"...","reason":"...","matchScore":0}]}
+Rules:
+- matchScore is an integer 40-98
+- reason is 1 sentence, concise
+- include every project id exactly once
 
-      // Experience match
-      const exactExpMatch = project.rolesNeeded.some(
-        (r: { role: string; experience: string }) =>
-          r.role === user.role && r.experience === user.experience,
-      );
-      if (exactExpMatch) {
-        score += 10;
-        reasons.push("your experience level is a perfect fit");
-      }
+User:
+${JSON.stringify(user)}
 
-      // Industry overlap
-      const industryMatch = (user.industries || []).includes(project.industry);
-      if (industryMatch) {
-        score += 15;
-        reasons.push(`aligns with your interest in ${project.industry}`);
-      }
+Projects:
+${JSON.stringify(projects)}
+`;
 
-      // Tag affinity (simple heuristic)
-      const techTags = ["React", "TypeScript", "Next.js", "Node.js", "Python"];
-      const designTags = ["UX Research", "Figma", "Design Systems"];
-      const pmTags = ["Agile", "Strategy", "Product"];
-      const relevantTags =
-        user.role === "swe"
-          ? techTags
-          : user.role === "designer"
-            ? designTags
-            : pmTags;
-      const tagOverlap = project.tags.filter((t: string) =>
-        relevantTags.some((rt) => t.toLowerCase().includes(rt.toLowerCase())),
-      ).length;
-      score += tagOverlap * 3;
+    const response = await client.responses.create({
+      model: OPENAI_MODEL,
+      input,
+    });
 
-      // Clamp score
-      score = Math.min(98, Math.max(40, score));
-
-      const reason =
-        reasons.length > 0
-          ? `This project ${reasons.slice(0, 2).join(" and ")}.`
-          : `This project could be a great way to expand your skills.`;
-
-      return {
-        projectId: project.id,
-        reason,
-        matchScore: score,
-      };
-    },
-  );
-
-  // Sort by score descending
-  recommendations.sort(
-    (a: { matchScore: number }, b: { matchScore: number }) =>
-      b.matchScore - a.matchScore,
-  );
-
-  return Response.json({ recommendations });
+    const text = response.output_text || "";
+    const recommendations = safeParseRecommendations(text, fallback);
+    const usedAI = recommendations !== fallback;
+    console.log(
+      `[recommend] ${usedAI ? "AI" : "fallback"} recommendations generated`,
+    );
+    return Response.json({ recommendations });
+  } catch {
+    console.log("[recommend] fallback recommendations due to AI error");
+    return Response.json({ recommendations: fallback });
+  }
 }

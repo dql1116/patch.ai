@@ -3,16 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Industry, Role, ExperienceLevel, WorkEthic, Team, UserProfile } from "@/lib/types";
-import {
-  clearAuth,
-  clearUser,
-  completeTeamProject,
-  getCompletedProjectIdsForUser,
-  getCurrentUser,
-  getTeams,
-  isAuthenticated,
-} from "@/lib/store";
 import { ArrowLeft, CheckCircle2, LogOut } from "lucide-react";
+import { createBrowserClient } from "@/lib/supabase/client";
+import { getCurrentProfile, signOut } from "@/lib/supabase/profile";
 
 const ROLE_LABELS: Record<Role, string> = {
   swe: "Software Engineer",
@@ -21,9 +14,9 @@ const ROLE_LABELS: Record<Role, string> = {
 };
 
 const EXPERIENCE_LABELS: Record<ExperienceLevel, string> = {
-  junior: "Beginner",
-  mid: "Intermediate",
-  senior: "Advanced",
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
 };
 
 const WORK_ETHIC_LABELS: Record<WorkEthic, string> = {
@@ -51,24 +44,40 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const authed = isAuthenticated();
-    if (!authed) {
-      router.replace("/");
-      return;
+    async function load() {
+      const supabase = createBrowserClient();
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        router.replace("/");
+        return;
+      }
+      const stored = await getCurrentProfile();
+      if (!stored) {
+        router.replace("/onboarding");
+        return;
+      }
+      setUser(stored);
+      try {
+        const res = await fetch("/api/teams");
+        const data = await res.json();
+        setTeams((data?.teams as Team[]) || []);
+      } catch {
+        setTeams([]);
+      }
+      setLoading(false);
     }
-    const stored = getCurrentUser();
-    if (!stored) {
-      router.replace("/onboarding");
-      return;
-    }
-    setUser(stored);
-    setTeams(getTeams());
-    setLoading(false);
+    load();
   }, [router]);
 
   const completedProjectIds = useMemo(() => {
     if (!user) return [];
-    return getCompletedProjectIdsForUser(user.id);
+    return teams
+      .filter(
+        (team) =>
+          team.completedAt &&
+          team.members.some((member) => member.id === user.id),
+      )
+      .map((team) => team.projectId);
   }, [user, teams]);
 
   const ongoingTeams = useMemo(() => {
@@ -97,8 +106,19 @@ export default function ProfilePage() {
     if (!team) return;
     if (team.project.createdBy !== user.id) return;
     if (team.completedAt) return;
-    completeTeamProject(teamId, user.id);
-    setTeams(getTeams());
+    fetch(`/api/teams/${teamId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completedBy: user.id }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.team) {
+          setTeams((prev) =>
+            prev.map((t) => (t.id === teamId ? data.team : t)),
+          );
+        }
+      });
   }
 
   if (loading || !user) {
@@ -128,9 +148,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => {
-                clearUser();
-                clearAuth();
-                router.replace("/");
+                signOut().then(() => router.replace("/"));
               }}
               className="text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Log out"

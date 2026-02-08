@@ -5,7 +5,7 @@ import React from "react"
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Role, ExperienceLevel, Industry, WorkEthic } from "@/lib/types";
-import { createUserProfile, getAuthEmail } from "@/lib/store";
+import { upsertProfile } from "@/lib/supabase/profile";
 import { PatchLogo } from "@/components/patch-logo";
 import {
   Code2,
@@ -38,9 +38,9 @@ const ROLES: { value: Role; label: string; icon: React.ReactNode; desc: string }
 ];
 
 const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string }[] = [
-  { value: "junior", label: "Beginner" },
-  { value: "mid", label: "Intermediate" },
-  { value: "senior", label: "Advanced" },
+  { value: "beginner", label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced", label: "Advanced" },
 ];
 
 const INDUSTRIES: { value: Industry; label: string }[] = [
@@ -85,6 +85,8 @@ export function Onboarding({ onComplete, onExit }: OnboardingProps) {
   const [experience, setExperience] = useState<ExperienceLevel | null>(null);
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [workEthic, setWorkEthic] = useState<WorkEthic | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const totalSteps = 5;
 
@@ -111,18 +113,24 @@ export function Onboarding({ onComplete, onExit }: OnboardingProps) {
     }
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!role || !experience || !workEthic) return;
-    const email = getAuthEmail() || "demo@patch.ai.ai";
-    createUserProfile({
-      name: name.trim(),
-      email,
-      role,
-      experience,
-      industries,
-      workEthic,
-    });
-    onComplete();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await upsertProfile({
+        name: name.trim(),
+        role,
+        experience,
+        industries,
+        workEthic,
+      });
+      onComplete();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -345,19 +353,22 @@ export function Onboarding({ onComplete, onExit }: OnboardingProps) {
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={!canProceed()}
+              disabled={!canProceed() || submitting}
               className={cn(
                 "flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium transition-all",
-                canProceed()
+                canProceed() && !submitting
                   ? "bg-primary text-primary-foreground hover:opacity-90"
                   : "bg-muted text-muted-foreground",
               )}
             >
               <Sparkles className="h-4 w-4" />
-              Find My Team
+              {submitting ? "Saving..." : "Find My Team"}
             </button>
           )}
         </div>
+        {error && (
+          <p className="mt-4 text-sm text-destructive">{error}</p>
+        )}
       </div>
     </div>
   );

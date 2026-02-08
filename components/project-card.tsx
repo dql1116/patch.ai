@@ -19,9 +19,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const EXPERIENCE_LABELS: Record<string, string> = {
-  junior: "Beginner",
-  mid: "Intermediate",
-  senior: "Advanced",
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
 };
 
 const INDUSTRY_COLORS: Record<string, string> = {

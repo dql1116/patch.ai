@@ -1,5 +1,5 @@
 export type Role = "swe" | "pm" | "designer";
-export type ExperienceLevel = "junior" | "mid" | "senior";
+export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
 export type Industry =
   | "fintech"
   | "healthtech"
