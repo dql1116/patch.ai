@@ -98,11 +98,11 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <button
-            type="button"
-            onClick={() => router.push("/onboarding")}
-            className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-medium text-foreground hover:bg-secondary"
-          >
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard")}
+              className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-medium text-foreground hover:bg-secondary"
+            >
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>

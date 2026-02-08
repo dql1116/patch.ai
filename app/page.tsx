@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      router.replace("/onboarding");
+      router.replace("/dashboard");
     }
   }, [router]);
 
@@ -24,7 +24,7 @@ export default function LoginPage() {
     if (!canContinue) return;
     setAuthEmail(email.trim());
     setAuthenticated(true);
-    router.replace("/onboarding");
+    router.replace("/dashboard");
   }
 
   return (

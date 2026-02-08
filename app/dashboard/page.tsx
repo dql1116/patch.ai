@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { clearAuth, clearUser, getCurrentUser, isAuthenticated } from "@/lib/store";
-import { Onboarding } from "@/components/onboarding";
+import type { UserProfile } from "@/lib/types";
 import { Dashboard } from "@/components/dashboard";
 
-export default function OnboardingPage() {
+export default function DashboardPage() {
   const router = useRouter();
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState<boolean | null>(null);
 
-  useEffect(() => {
+  const refreshUser = useCallback(() => {
     const isAuthed = isAuthenticated();
     setAuthed(isAuthed);
     if (!isAuthed) {
@@ -21,11 +22,30 @@ export default function OnboardingPage() {
     }
     const stored = getCurrentUser();
     if (stored) {
-      router.replace("/dashboard");
-      return;
+      setUser(stored);
+    } else {
+      router.replace("/onboarding");
     }
     setLoading(false);
   }, [router]);
+
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        refreshUser();
+      }
+    }
+    window.addEventListener("focus", refreshUser);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("focus", refreshUser);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [refreshUser]);
 
   if (loading || authed === null || authed === false) {
     return (
@@ -35,14 +55,17 @@ export default function OnboardingPage() {
     );
   }
 
+  if (!user) {
+    return null;
+  }
+
   return (
-    <Onboarding
-      onComplete={() => {
-        router.replace("/dashboard");
-      }}
-      onExit={() => {
+    <Dashboard
+      user={user}
+      onLogout={() => {
         clearUser();
         clearAuth();
+        setUser(null);
         router.replace("/");
       }}
     />

@@ -10,7 +10,7 @@ import type {
   ExperienceLevel,
   Industry,
 } from "@/lib/types";
-import { addProject } from "@/lib/store";
+import { addProject, saveTeam } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -124,6 +124,16 @@ export function CreateProject({ user, onCreated, onCancel }: CreateProjectProps)
     };
 
     addProject(project);
+    const now = Date.now();
+    saveTeam({
+      id: `team-${now}`,
+      projectId: project.id,
+      project,
+      members: [user],
+      matchScore: 100,
+      matchReason: "Project created by you.",
+      createdAt: new Date().toISOString(),
+    });
     onCreated();
   }
 

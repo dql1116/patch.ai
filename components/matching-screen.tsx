@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { UserProfile, Team } from "@/lib/types";
-import { getProjects, getMockUsers, saveTeam } from "@/lib/store";
+import { getProjects, getMockUsers, getTeams, saveTeam } from "@/lib/store";
 import { Sparkles, X } from "lucide-react";
 
 const MATCHING_MESSAGES = [
@@ -37,10 +37,22 @@ export function MatchingScreen({
 
   useEffect(() => {
     async function performMatch() {
-      const projects = getProjects();
+      const existingTeams = getTeams();
+      const userTeamProjectIds = new Set(
+        existingTeams
+          .filter((team) => team.members.some((m) => m.id === user.id))
+          .map((team) => team.projectId),
+      );
+      const projects = getProjects().filter(
+        (project) => !userTeamProjectIds.has(project.id),
+      );
       const mockUsers = getMockUsers();
 
       try {
+        if (projects.length === 0) {
+          onCancel();
+          return;
+        }
         const res = await fetch("/api/match", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -97,7 +109,13 @@ export function MatchingScreen({
         onComplete(team);
       } catch (err) {
         // Fallback matching
-        const projects = getProjects();
+        const projects = getProjects().filter(
+          (project) => !userTeamProjectIds.has(project.id),
+        );
+        if (projects.length === 0) {
+          onCancel();
+          return;
+        }
         const fallbackProject = projects[0];
         const fallbackMembers = getMockUsers().slice(0, 3);
         const team: Team = {
