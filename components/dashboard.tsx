@@ -10,7 +10,7 @@ import {
   setMatchPreferences,
 } from "@/lib/store";
 import { ProjectCard } from "@/components/project-card";
-import { Sparkles, Plus, LogOut, MessageCircle } from "lucide-react";
+import { Sparkles, Plus, LogOut, MessageCircle, Users } from "lucide-react";
 import { PatchLogo } from "@/components/patch-logo";
 
 interface DashboardProps {
