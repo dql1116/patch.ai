@@ -7,77 +7,70 @@ interface PatchLogoProps {
 
 export function PatchLogo({ size = "md", className }: PatchLogoProps) {
   const sizeClasses = {
-    sm: "h-9 w-9",
-    md: "h-14 w-14",
-    lg: "h-20 w-20",
+    sm: "h-10 w-10",
+    md: "h-16 w-16",
+    lg: "h-24 w-24",
+  };
+
+  const iconClasses = {
+    sm: "h-6 w-6",
+    md: "h-10 w-10",
+    lg: "h-14 w-14",
   };
 
   return (
     <div
       className={cn(
-        "flex items-center justify-center rounded-2xl bg-primary",
+        "flex items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20",
         sizeClasses[size],
         size === "sm" && "rounded-xl",
         className
       )}
     >
       <svg
-        viewBox="0 0 32 32"
+        viewBox="0 0 40 40"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className={cn(
-          size === "sm" ? "h-5 w-5" : size === "md" ? "h-7 w-7" : "h-10 w-10"
-        )}
+        className={iconClasses[size]}
       >
-        {/* Two interlocking patch shapes representing connection/matching */}
-        {/* Top-left patch piece */}
+        {/* Top-left patch */}
         <rect
-          x="3"
-          y="3"
-          width="13"
-          height="13"
-          rx="3"
+          x="4"
+          y="4"
+          width="15"
+          height="15"
+          rx="4"
           className="fill-primary-foreground"
-          opacity="0.9"
         />
-        {/* Bottom-right patch piece */}
+        {/* Bottom-right patch */}
         <rect
-          x="16"
-          y="16"
-          width="13"
-          height="13"
-          rx="3"
+          x="21"
+          y="21"
+          width="15"
+          height="15"
+          rx="4"
           className="fill-primary-foreground"
-          opacity="0.9"
         />
-        {/* Connecting bridge - horizontal */}
-        <rect
-          x="12"
-          y="12"
-          width="8"
-          height="4"
-          rx="1.5"
-          className="fill-primary-foreground"
-          opacity="0.6"
+        {/* Connecting cross-stitch: diagonal from top-left to bottom-right */}
+        <line
+          x1="16"
+          y1="16"
+          x2="24"
+          y2="24"
+          className="stroke-primary-foreground"
+          strokeWidth="3"
+          strokeLinecap="round"
         />
-        {/* Connecting bridge - vertical */}
-        <rect
-          x="14"
-          y="10"
-          width="4"
-          height="8"
-          rx="1.5"
-          className="fill-primary-foreground"
-          opacity="0.6"
+        {/* Connecting cross-stitch: diagonal from top-right to bottom-left */}
+        <line
+          x1="24"
+          y1="16"
+          x2="16"
+          y2="24"
+          className="stroke-primary-foreground"
+          strokeWidth="3"
+          strokeLinecap="round"
         />
-        {/* Stitch marks on top-left patch */}
-        <line x1="6" y1="7" x2="8" y2="7" stroke="currentColor" strokeWidth="1" strokeLinecap="round" className="text-primary" opacity="0.5" />
-        <line x1="6" y1="9.5" x2="8" y2="9.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" className="text-primary" opacity="0.5" />
-        <line x1="6" y1="12" x2="8" y2="12" stroke="currentColor" strokeWidth="1" strokeLinecap="round" className="text-primary" opacity="0.5" />
-        {/* Stitch marks on bottom-right patch */}
-        <line x1="24" y1="20" x2="26" y2="20" stroke="currentColor" strokeWidth="1" strokeLinecap="round" className="text-primary" opacity="0.5" />
-        <line x1="24" y1="22.5" x2="26" y2="22.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" className="text-primary" opacity="0.5" />
-        <line x1="24" y1="25" x2="26" y2="25" stroke="currentColor" strokeWidth="1" strokeLinecap="round" className="text-primary" opacity="0.5" />
       </svg>
     </div>
   );
