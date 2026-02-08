@@ -7,15 +7,15 @@ interface PatchLogoProps {
 
 export function PatchLogo({ size = "md", className }: PatchLogoProps) {
   const sizeClasses = {
-    sm: "h-12 w-12",
-    md: "h-20 w-20",
-    lg: "h-28 w-28",
+    sm: "h-11 w-11",
+    md: "h-18 w-18",
+    lg: "h-26 w-26",
   };
 
   const iconClasses = {
-    sm: "h-8 w-8",
-    md: "h-13 w-13",
-    lg: "h-18 w-18",
+    sm: "h-7 w-7",
+    md: "h-11 w-11",
+    lg: "h-16 w-16",
   };
 
   return (
