@@ -6,6 +6,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Role, ExperienceLevel, Industry, WorkEthic } from "@/lib/types";
 import { createUserProfile, getAuthEmail } from "@/lib/store";
+import { PatchLogo } from "@/components/patch-logo";
 import {
   Code2,
   Briefcase,
@@ -13,7 +14,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Sparkles,
-  Users,
 } from "lucide-react";
 
 const ROLES: { value: Role; label: string; icon: React.ReactNode; desc: string }[] = [
@@ -130,9 +130,7 @@ export function Onboarding({ onComplete, onExit }: OnboardingProps) {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-            <Users className="h-7 w-7 text-primary-foreground" />
-          </div>
+          <PatchLogo size="md" className="mx-auto mb-4" />
           <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
             patch.ai
           </h1>

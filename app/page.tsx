@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { isAuthenticated, setAuthEmail, setAuthenticated } from "@/lib/store";
-import { Users } from "lucide-react";
+import { PatchLogo } from "@/components/patch-logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,14 +31,12 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
       <div className="w-full max-w-lg">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-            <Users className="h-7 w-7 text-primary-foreground" />
-          </div>
+          <PatchLogo size="md" className="mx-auto mb-4" />
           <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
             patch.ai
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Sign in to continue to onboarding
+            Sign in to continue
           </p>
         </div>
 
