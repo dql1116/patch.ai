@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { UserProfile, Project, Team } from "@/lib/types";
-import { getProjects, getTeams } from "@/lib/store";
+import { getCompletedProjectIdsForUser, getProjects, getTeams } from "@/lib/store";
 import { ProjectCard } from "@/components/project-card";
 import { Sparkles, Plus, Users, LogOut, MessageCircle } from "lucide-react";
 
@@ -67,11 +67,12 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
     }
   }, [user, projects.length]);
 
-  const completedIds = new Set(user.completedProjectIds);
+  const completedIds = new Set(getCompletedProjectIdsForUser(user.id));
   const visibleTeams = existingTeams.filter(
     (team) =>
       team.members.some((member) => member.id === user.id) &&
-      !completedIds.has(team.projectId),
+      !completedIds.has(team.projectId) &&
+      !team.completedAt,
   );
 
   // Sort projects by recommendation score

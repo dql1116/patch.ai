@@ -6,10 +6,11 @@ import type { Industry, Role, ExperienceLevel, WorkEthic, Team, UserProfile } fr
 import {
   clearAuth,
   clearUser,
+  completeTeamProject,
+  getCompletedProjectIdsForUser,
   getCurrentUser,
   getTeams,
   isAuthenticated,
-  saveUser,
 } from "@/lib/store";
 import { ArrowLeft, CheckCircle2, LogOut } from "lucide-react";
 
@@ -65,25 +66,39 @@ export default function ProfilePage() {
     setLoading(false);
   }, [router]);
 
+  const completedProjectIds = useMemo(() => {
+    if (!user) return [];
+    return getCompletedProjectIdsForUser(user.id);
+  }, [user, teams]);
+
   const ongoingTeams = useMemo(() => {
     if (!user) return [];
-    const completed = new Set(user.completedProjectIds);
+    const completed = new Set(completedProjectIds);
     return teams.filter(
       (team) =>
         team.members.some((member) => member.id === user.id) &&
-        !completed.has(team.projectId),
+        !completed.has(team.projectId) &&
+        !team.completedAt,
+    );
+  }, [teams, user, completedProjectIds]);
+
+  const completedTeams = useMemo(() => {
+    if (!user) return [];
+    return teams.filter(
+      (team) =>
+        team.members.some((member) => member.id === user.id) &&
+        !!team.completedAt,
     );
   }, [teams, user]);
 
-  function handleComplete(projectId: string) {
+  function handleComplete(teamId: string) {
     if (!user) return;
-    if (user.completedProjectIds.includes(projectId)) return;
-    const updated: UserProfile = {
-      ...user,
-      completedProjectIds: [...user.completedProjectIds, projectId],
-    };
-    saveUser(updated);
-    setUser(updated);
+    const team = teams.find((t) => t.id === teamId);
+    if (!team) return;
+    if (team.project.createdBy !== user.id) return;
+    if (team.completedAt) return;
+    completeTeamProject(teamId, user.id);
+    setTeams(getTeams());
   }
 
   if (loading || !user) {
@@ -136,7 +151,7 @@ export default function ProfilePage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 Completed projects:{" "}
                 <span className="font-semibold text-foreground">
-                  {user.completedProjectIds.length}
+                  {completedProjectIds.length}
                 </span>
               </p>
             </div>
@@ -214,18 +229,61 @@ export default function ProfilePage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleComplete(team.projectId)}
-                    className="flex shrink-0 items-center gap-2 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5"
+                    onClick={() => handleComplete(team.id)}
+                    disabled={team.project.createdBy !== user.id}
+                    className={
+                      team.project.createdBy === user.id
+                        ? "flex shrink-0 items-center gap-2 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5"
+                        : "flex shrink-0 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground"
+                    }
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     Complete
                   </button>
                 </div>
+                {team.project.createdBy !== user.id && (
+                  <div className="mt-2 text-xs font-semibold text-amber-600">
+                    Only the project creator can complete this project.
+                  </div>
+                )}
               </div>
             ))}
             {ongoingTeams.length === 0 && (
               <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
                 No ongoing projects yet. Join a team to get started.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Past Projects
+          </h2>
+          <div className="flex flex-col gap-3">
+            {completedTeams.map((team) => (
+              <div
+                key={team.id}
+                className="rounded-2xl border border-border bg-card p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="font-medium text-card-foreground">
+                      {team.project.title}
+                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {team.project.description}
+                    </div>
+                  </div>
+                  <div className="text-xs font-semibold text-emerald-600">
+                    Completed
+                  </div>
+                </div>
+              </div>
+            ))}
+            {completedTeams.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
+                No completed projects yet.
               </div>
             )}
           </div>

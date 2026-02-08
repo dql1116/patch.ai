@@ -336,6 +336,13 @@ export function addProject(project: Project): void {
   }
 }
 
+export function removeProject(projectId: string): void {
+  projects = getProjects().filter((project) => project.id !== projectId);
+  if (typeof window !== "undefined") {
+    localStorage.setItem("Patch-projects", JSON.stringify(projects));
+  }
+}
+
 export function getTeams(): Team[] {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("Patch-teams");
@@ -351,6 +358,36 @@ export function saveTeam(team: Team): void {
   if (typeof window !== "undefined") {
     localStorage.setItem("Patch-teams", JSON.stringify(teams));
   }
+}
+
+export function updateTeam(updated: Team): void {
+  teams = getTeams().map((team) => (team.id === updated.id ? updated : team));
+  if (typeof window !== "undefined") {
+    localStorage.setItem("Patch-teams", JSON.stringify(teams));
+  }
+}
+
+export function completeTeamProject(teamId: string, completedBy: string): Team | null {
+  const team = getTeamById(teamId);
+  if (!team) return null;
+  const updated: Team = {
+    ...team,
+    completedAt: new Date().toISOString(),
+    completedBy,
+  };
+  updateTeam(updated);
+  removeProject(team.projectId);
+  return updated;
+}
+
+export function getCompletedProjectIdsForUser(userId: string): string[] {
+  return getTeams()
+    .filter(
+      (team) =>
+        team.completedAt &&
+        team.members.some((member) => member.id === userId),
+    )
+    .map((team) => team.projectId);
 }
 
 export function getTeamById(id: string): Team | undefined {

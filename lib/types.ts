@@ -45,6 +45,8 @@ export interface Team {
   matchScore: number;
   matchReason: string;
   createdAt: string;
+  completedAt?: string;
+  completedBy?: string;
 }
 
 export interface ChatMessage {
