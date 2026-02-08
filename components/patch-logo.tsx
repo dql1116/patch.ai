@@ -7,21 +7,21 @@ interface PatchLogoProps {
 
 export function PatchLogo({ size = "md", className }: PatchLogoProps) {
   const sizeClasses = {
-    sm: "h-11 w-11",
-    md: "h-18 w-18",
-    lg: "h-26 w-26",
+    sm: "size-10",
+    md: "size-16",
+    lg: "size-24",
   };
 
   const iconClasses = {
-    sm: "h-7 w-7",
-    md: "h-11 w-11",
-    lg: "h-16 w-16",
+    sm: "size-6",
+    md: "size-10",
+    lg: "size-14",
   };
 
   return (
     <div
       className={cn(
-        "flex items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20",
+        "flex shrink-0 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20 aspect-square",
         sizeClasses[size],
         size === "sm" && "rounded-xl",
         className
