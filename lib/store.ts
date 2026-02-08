@@ -213,7 +213,7 @@ let chatMessages: ChatMessage[] = [];
 
 export function getCurrentUser(): UserProfile | null {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem("teamforge-user");
+  const stored = localStorage.getItem("Patch-user");
   if (stored) {
     currentUser = JSON.parse(stored);
     return currentUser;
@@ -224,7 +224,7 @@ export function getCurrentUser(): UserProfile | null {
 export function saveUser(user: UserProfile): void {
   currentUser = user;
   if (typeof window !== "undefined") {
-    localStorage.setItem("teamforge-user", JSON.stringify(user));
+    localStorage.setItem("Patch-user", JSON.stringify(user));
   }
 }
 
@@ -251,7 +251,7 @@ export function createUserProfile(data: {
 
 export function getProjects(): Project[] {
   if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("teamforge-projects");
+    const stored = localStorage.getItem("Patch-projects");
     if (stored) {
       projects = JSON.parse(stored);
     }
@@ -262,13 +262,13 @@ export function getProjects(): Project[] {
 export function addProject(project: Project): void {
   projects = [project, ...getProjects()];
   if (typeof window !== "undefined") {
-    localStorage.setItem("teamforge-projects", JSON.stringify(projects));
+    localStorage.setItem("Patch-projects", JSON.stringify(projects));
   }
 }
 
 export function getTeams(): Team[] {
   if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("teamforge-teams");
+    const stored = localStorage.getItem("Patch-teams");
     if (stored) {
       teams = JSON.parse(stored);
     }
@@ -279,7 +279,7 @@ export function getTeams(): Team[] {
 export function saveTeam(team: Team): void {
   teams = [team, ...getTeams()];
   if (typeof window !== "undefined") {
-    localStorage.setItem("teamforge-teams", JSON.stringify(teams));
+    localStorage.setItem("Patch-teams", JSON.stringify(teams));
   }
 }
 
@@ -289,7 +289,7 @@ export function getTeamById(id: string): Team | undefined {
 
 export function getChatMessages(teamId: string): ChatMessage[] {
   if (typeof window !== "undefined") {
-    const stored = localStorage.getItem(`teamforge-chat-${teamId}`);
+    const stored = localStorage.getItem(`Patch-chat-${teamId}`);
     if (stored) {
       return JSON.parse(stored);
     }
@@ -302,7 +302,7 @@ export function addChatMessage(message: ChatMessage): void {
   messages.push(message);
   if (typeof window !== "undefined") {
     localStorage.setItem(
-      `teamforge-chat-${message.teamId}`,
+      `Patch-chat-${message.teamId}`,
       JSON.stringify(messages),
     );
   }
@@ -315,6 +315,6 @@ export function getMockUsers(): UserProfile[] {
 export function clearUserData(): void {
   currentUser = null;
   if (typeof window !== "undefined") {
-    localStorage.removeItem("teamforge-user");
+    localStorage.removeItem("Patch-user");
   }
 }
