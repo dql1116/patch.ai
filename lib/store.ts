@@ -211,9 +211,27 @@ let projects: Project[] = [...MOCK_PROJECTS];
 let teams: Team[] = [];
 let chatMessages: ChatMessage[] = [];
 
+const AUTH_KEY = "Patch-auth";
+const USER_KEY = "Patch-user";
+
+export function isAuthenticated(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(AUTH_KEY) === "true";
+}
+
+export function setAuthenticated(value: boolean): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(AUTH_KEY, value ? "true" : "false");
+}
+
+export function clearAuth(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(AUTH_KEY);
+}
+
 export function getCurrentUser(): UserProfile | null {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem("Patch-user");
+  const stored = localStorage.getItem(USER_KEY);
   if (stored) {
     currentUser = JSON.parse(stored);
     return currentUser;
@@ -224,7 +242,14 @@ export function getCurrentUser(): UserProfile | null {
 export function saveUser(user: UserProfile): void {
   currentUser = user;
   if (typeof window !== "undefined") {
-    localStorage.setItem("Patch-user", JSON.stringify(user));
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  }
+}
+
+export function clearUser(): void {
+  currentUser = null;
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(USER_KEY);
   }
 }
 

@@ -75,9 +75,10 @@ const WORK_ETHICS: { value: WorkEthic; label: string; desc: string }[] = [
 
 interface OnboardingProps {
   onComplete: () => void;
+  onExit?: () => void;
 }
 
-export function Onboarding({ onComplete }: OnboardingProps) {
+export function Onboarding({ onComplete, onExit }: OnboardingProps) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role | null>(null);
@@ -310,17 +311,22 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         <div className="mt-6 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => setStep((s) => s - 1)}
-            disabled={step === 0}
+            onClick={() => {
+              if (step === 0) {
+                onExit?.();
+                return;
+              }
+              setStep((s) => s - 1);
+            }}
             className={cn(
               "flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
               step === 0
-                ? "text-muted-foreground opacity-50"
+                ? "text-foreground hover:bg-secondary"
                 : "text-foreground hover:bg-secondary",
             )}
           >
             <ChevronLeft className="h-4 w-4" />
-            Back
+            {step === 0 ? "Back to login" : "Back"}
           </button>
 
           {step < totalSteps - 1 ? (
