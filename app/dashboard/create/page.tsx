@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { UserProfile } from "@/lib/types";
-import { getCurrentUser, isAuthenticated } from "@/lib/store";
 import { CreateProject } from "@/components/create-project";
+import { createBrowserClient } from "@/lib/supabase/client";
+import { getCurrentProfile } from "@/lib/supabase/profile";
 
 export default function CreateProjectPage() {
   const router = useRouter();
@@ -12,18 +13,22 @@ export default function CreateProjectPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const authed = isAuthenticated();
-    if (!authed) {
-      router.replace("/");
-      return;
+    async function load() {
+      const supabase = createBrowserClient();
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        router.replace("/");
+        return;
+      }
+      const stored = await getCurrentProfile();
+      if (!stored) {
+        router.replace("/onboarding");
+        return;
+      }
+      setUser(stored);
+      setLoading(false);
     }
-    const stored = getCurrentUser();
-    if (!stored) {
-      router.replace("/onboarding");
-      return;
-    }
-    setUser(stored);
-    setLoading(false);
+    load();
   }, [router]);
 
   if (loading || !user) {

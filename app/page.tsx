@@ -2,28 +2,44 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated, setAuthEmail, setAuthenticated } from "@/lib/store";
 import { PatchLogo } from "@/components/patch-logo";
+import { createBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const supabase = createBrowserClient();
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      router.replace("/dashboard");
+    async function checkSession() {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.replace("/dashboard");
+      }
     }
+    checkSession();
   }, [router]);
 
   const canContinue =
     email.trim().includes("@") && password.trim().length >= 6;
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!canContinue) return;
-    setAuthEmail(email.trim());
-    setAuthenticated(true);
+    setError(null);
+    setLoading(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: password.trim(),
+    });
+    setLoading(false);
+    if (signInError) {
+      setError(signInError.message);
+      return;
+    }
     router.replace("/dashboard");
   }
 
@@ -45,7 +61,7 @@ export default function LoginPage() {
             Welcome back
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            This is a demo login screen
+            Use email/password or sign in with OAuth
           </p>
 
           <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
@@ -66,15 +82,80 @@ export default function LoginPage() {
             />
             <button
               type="submit"
-              disabled={!canContinue}
+              disabled={!canContinue || loading}
               className={
-                canContinue
+                canContinue && !loading
                   ? "mt-2 w-full rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:opacity-90"
                   : "mt-2 w-full rounded-lg bg-muted px-6 py-2.5 text-sm font-medium text-muted-foreground"
               }
             >
-              Continue
+              {loading ? "Signing in..." : "Sign in"}
             </button>
+            <button
+              type="button"
+              disabled={!canContinue || loading}
+              onClick={async () => {
+                setError(null);
+                setLoading(true);
+                const { error: signUpError } = await supabase.auth.signUp({
+                  email: email.trim(),
+                  password: password.trim(),
+                });
+                setLoading(false);
+                if (signUpError) {
+                  setError(signUpError.message);
+                  return;
+                }
+                router.replace("/onboarding");
+              }}
+              className={
+                canContinue && !loading
+                  ? "w-full rounded-lg border border-border bg-background px-6 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-secondary"
+                  : "w-full rounded-lg border border-border bg-background px-6 py-2.5 text-sm font-medium text-muted-foreground"
+              }
+            >
+              Create account
+            </button>
+            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              or
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  setError(null);
+                  await supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: {
+                      redirectTo: `${window.location.origin}/auth/callback`,
+                    },
+                  });
+                }}
+                className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-secondary"
+              >
+                Continue with Google
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setError(null);
+                  await supabase.auth.signInWithOAuth({
+                    provider: "github",
+                    options: {
+                      redirectTo: `${window.location.origin}/auth/callback`,
+                    },
+                  });
+                }}
+                className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-secondary"
+              >
+                Continue with GitHub
+              </button>
+            </div>
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
           </form>
         </div>
       </div>

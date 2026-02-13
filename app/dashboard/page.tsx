@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { clearAuth, clearUser, getCurrentUser, isAuthenticated } from "@/lib/store";
 import type { UserProfile } from "@/lib/types";
 import { Dashboard } from "@/components/dashboard";
+import { createBrowserClient } from "@/lib/supabase/client";
+import { getCurrentProfile, signOut } from "@/lib/supabase/profile";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -13,20 +14,25 @@ export default function DashboardPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   const refreshUser = useCallback(() => {
-    const isAuthed = isAuthenticated();
-    setAuthed(isAuthed);
-    if (!isAuthed) {
-      router.replace("/");
+    async function run() {
+      const supabase = createBrowserClient();
+      const { data } = await supabase.auth.getSession();
+      const isAuthed = !!data.session;
+      setAuthed(isAuthed);
+      if (!isAuthed) {
+        router.replace("/");
+        setLoading(false);
+        return;
+      }
+      const stored = await getCurrentProfile();
+      if (stored) {
+        setUser(stored);
+      } else {
+        router.replace("/onboarding");
+      }
       setLoading(false);
-      return;
     }
-    const stored = getCurrentUser();
-    if (stored) {
-      setUser(stored);
-    } else {
-      router.replace("/onboarding");
-    }
-    setLoading(false);
+    run();
   }, [router]);
 
   useEffect(() => {
@@ -62,9 +68,8 @@ export default function DashboardPage() {
   return (
     <Dashboard
       user={user}
-      onLogout={() => {
-        clearUser();
-        clearAuth();
+      onLogout={async () => {
+        await signOut();
         setUser(null);
         router.replace("/");
       }}

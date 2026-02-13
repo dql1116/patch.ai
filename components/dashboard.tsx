@@ -3,12 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { UserProfile, Project, Team } from "@/lib/types";
-import {
-  getCompletedProjectIdsForUser,
-  getProjects,
-  getTeams,
-  setMatchPreferences,
-} from "@/lib/store";
+import { setMatchPreferences } from "@/lib/store";
 import { ProjectCard } from "@/components/project-card";
 import { Sparkles, Plus, LogOut, MessageCircle, Users } from "lucide-react";
 import { PatchLogo } from "@/components/patch-logo";
@@ -33,13 +28,36 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
 
   const refreshData = useCallback(() => {
-    setProjects(getProjects());
-    setExistingTeams(getTeams());
+    async function loadTeams() {
+      try {
+        const res = await fetch("/api/teams");
+        const data = await res.json();
+        setExistingTeams((data?.teams as Team[]) || []);
+      } catch {
+        setExistingTeams([]);
+      }
+    }
+    loadTeams();
   }, []);
 
   useEffect(() => {
     refreshData();
   }, [refreshData]);
+
+  useEffect(() => {
+    async function loadProjects() {
+      try {
+        const res = await fetch("/api/projects");
+        const data = await res.json();
+        if (data?.projects) {
+          setProjects(data.projects);
+        }
+      } catch {
+        setProjects([]);
+      }
+    }
+    loadProjects();
+  }, []);
 
   useEffect(() => {
     async function fetchRecommendations() {
@@ -48,7 +66,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
         const res = await fetch("/api/recommend", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user, projects: getProjects() }),
+          body: JSON.stringify({ user, projects }),
         });
         const data = await res.json();
         if (data?.recommendations) {
@@ -57,7 +75,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
       } catch {
         // Fallback: show all projects with no AI scores
         setRecommendations(
-          getProjects().map((p) => ({
+          projects.map((p) => ({
             projectId: p.id,
             reason: "This project could be a great fit for your skills.",
             matchScore: Math.floor(Math.random() * 30) + 60,
@@ -72,9 +90,17 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
     } else {
       setLoadingRecs(false);
     }
-  }, [user, projects.length]);
+  }, [user, projects]);
 
-  const completedIds = new Set(getCompletedProjectIdsForUser(user.id));
+  const completedIds = new Set(
+    existingTeams
+      .filter(
+        (team) =>
+          team.completedAt &&
+          team.members.some((member) => member.id === user.id),
+      )
+      .map((team) => team.projectId),
+  );
   const visibleTeams = existingTeams.filter(
     (team) =>
       team.members.some((member) => member.id === user.id) &&
@@ -116,7 +142,6 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
             <button
               type="button"
               onClick={() => {
-                localStorage.clear();
                 onLogout();
               }}
               className="text-muted-foreground hover:text-foreground transition-colors"
