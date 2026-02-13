@@ -2,6 +2,10 @@
 
 AI-powered team matching for UCDavis Prodcon 2026. Users onboard with role, experience, interests, and work style, then get matched to projects with explainable recommendations and team assembly.
 
+## Prodcon 2026 Prompt:
+
+"Design an Al-powered product that helps undergraduates transition to their post-graduation path."
+
 ## Stack
 - Next.js (App Router)
 - Supabase (Auth + Postgres)
